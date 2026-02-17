@@ -228,7 +228,7 @@ export default function Sidebar({
                 )}
               </div>
               <button
-                className="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-transparent border-none text-gray-400 
+                className="absolute bottom-3 right-3 w-6 h-6 rounded-full bg-transparent border-none text-gray-400 
                            text-base flex items-center justify-center opacity-0 group-hover:opacity-100 
                            hover:bg-red-50 hover:text-red-500 transition-all duration-150 cursor-pointer"
                 onClick={(e) => onDeleteNote(e, note.id)}
