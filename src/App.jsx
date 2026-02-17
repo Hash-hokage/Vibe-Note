@@ -69,7 +69,7 @@ const formatDailyTitle = (date) => {
 const createDailyNote = (date) => {
   const title = formatDailyTitle(date)
   const dayOfWeek = date.toLocaleDateString('en-US', { weekday: 'long' })
-  const template = `<h2>${title} — ${dayOfWeek}</h2><h3>Focus</h3><label class="checkbox-item flex items-center gap-2 py-1 cursor-pointer" contenteditable="false"><input type="checkbox" class="checkbox-input"><span class="checkbox-text flex-1 outline-none min-w-0" contenteditable="true">\u00A0</span></label><h3>Log</h3><div><br></div>`
+  const template = `<h2>${title} — ${dayOfWeek}</h2><h2>Focus</h2><label class="checkbox-item flex items-center gap-2 py-1 cursor-pointer" contenteditable="false"><input type="checkbox" class="checkbox-input"><span class="checkbox-text flex-1 outline-none min-w-0" contenteditable="true">\u00A0</span></label><h2>Log</h2><div><br></div>`
   return {
     id: 'daily-' + date.toISOString().slice(0, 10),
     title,

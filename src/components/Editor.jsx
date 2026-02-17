@@ -592,7 +592,7 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
     <>
       <div
         ref={ref}
-        className="editor-content"
+        className="editor-content px-5 py-6"
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}

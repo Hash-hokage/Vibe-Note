@@ -96,6 +96,14 @@
     @apply text-xl font-bold mt-4 mb-2;
   }
 
+  .dark .editor-content h2 {
+    color: #f4f4f5;
+  }
+
+  .editor-content .checkbox-item {
+    margin-bottom: 6px;
+  }
+
   .editor-content p {
     @apply my-1;
   }
