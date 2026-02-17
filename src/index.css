@@ -93,7 +93,7 @@
 
   /* ── Nested element styles inside editor ── */
   .editor-content h2 {
-    @apply text-xl font-bold mt-6 mb-2;
+    @apply text-2xl font-bold mt-6 mb-4;
     color: #eab308;
   }
 
