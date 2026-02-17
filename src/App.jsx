@@ -95,6 +95,66 @@ const createDailyNote = (date) => {
   }
 }
 
+
+/* ─── Lock Screen Component ─── */
+function LockScreen({ isLocked, onUnlock, onSetPin }) {
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState('')
+  const hasPin = !!localStorage.getItem('zap_user_pin')
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!pin) return
+
+    if (!hasPin) {
+      if (pin.length < 4) { setError('PIN must be at least 4 digits'); return }
+      onSetPin(pin)
+    } else {
+      const saved = localStorage.getItem('zap_user_pin')
+      if (pin === saved) {
+        onUnlock()
+      } else {
+        setError('Incorrect PIN')
+        setPin('')
+      }
+    }
+  }
+
+  return (
+    <div className="flex-1 flex flex-col items-center justify-center p-8 text-center animate-[slideIn_0.2s_ease-out]">
+      <div className="text-6xl mb-4">🔒</div>
+      <h2 className="text-2xl font-bold mb-2 text-gray-800 dark:text-gray-100">
+        {hasPin ? 'Locked Note' : 'Secure Your Notes'}
+      </h2>
+      <p className="text-gray-500 mb-6 max-w-xs mx-auto">
+        {hasPin 
+          ? 'Enter your PIN to view this content.' 
+          : 'Set a PIN to lock this note. You will need this PIN to unlock notes in the future.'}
+      </p>
+      <form onSubmit={handleSubmit} className="w-full max-w-[240px]">
+        <input
+          type="password"
+          className="w-full px-4 py-3 text-center text-xl tracking-[0.5em] rounded-xl border border-gray-200 
+                     bg-gray-50 dark:bg-zinc-800 dark:border-zinc-700 dark:text-white outline-none 
+                     focus:border-apple-choice focus:ring-2 focus:ring-apple-choice/20 mb-3 transition-all placeholder:tracking-normal placeholder:text-base placeholder:text-gray-400"
+          placeholder={hasPin ? 'PIN' : 'New PIN'}
+          value={pin}
+          onChange={(e) => { setPin(e.target.value); setError('') }}
+          autoFocus
+        />
+        {error && <div className="text-red-500 text-sm mb-3 font-medium">{error}</div>}
+        <button
+          type="submit"
+          className="w-full py-3 rounded-xl bg-gray-900 text-white font-bold hover:bg-black 
+                     dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-colors shadow-lg"
+        >
+          {hasPin ? 'Unlock' : 'Set PIN & Lock'}
+        </button>
+      </form>
+    </div>
+  )
+}
+
 /* ─── initial data ─── */
 const INITIAL_NOTES = [
   {
@@ -167,6 +227,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
   const [mobileView, setMobileView] = useState('LIST') // 'LIST' or 'EDITOR'
+  const [unlockedSessionIds, setUnlockedSessionIds] = useState(new Set()) // Session-based unlocks
 
   /* ─── Task Rollover & Streak Logic ─── */
   const [streak, setStreak] = useState(0)
@@ -338,7 +399,61 @@ export default function App() {
     }
   }, [runTour])
 
+  /* ─── Lock Logic ─── */
+  const handleToggleLock = () => {
+    if (!activeId) return
+    const note = notes.find(n => n.id === activeId)
+    if (!note) return
+
+    // If it is currently locked and we are viewing it (unlocked session), re-lock it?
+    // Or if unlocked, lock it?
+    // Requirement: "When clicked, toggle isLocked = true". "Toggle" implies switching.
+    // If I click Lock on a locked active note, I probably want to re-lock (hide) it or un-protect it?
+    // Let's assume: If IS locked -> Unprotect (remove lock).
+    // If not locked -> Protect (add lock).
+    
+    // But to turn OFF lock (unprotect), we should verify PIN if not already verified?
+    // If we are viewing it, we are verified.
+    
+    const isLocked = note.isLocked
+    
+    if (isLocked) {
+      // Unprotecting (Removing lock)
+      const updated = notes.map(n => n.id === activeId ? { ...n, isLocked: false } : n)
+      setNotes(updated)
+      // Also remove from session to be clean
+      setUnlockedSessionIds(prev => {
+        const next = new Set(prev)
+        next.delete(activeId)
+        return next
+      })
+    } else {
+      // Protecting (Adding lock)
+      // Check if PIN exists first? If not, LockScreen handles it? No, LockScreen only shows when locked.
+      // If we lock it now, next render will show LockScreen if not in session?
+      // Yes. But we want user to set PIN if none exists.
+      // So if no PIN, we can't lock immediately without prompting?
+      // Actually, if we set isLocked=true, the view will switch to LockScreen, which prompts to Set PIN if missing.
+      // Logic holds.
+      
+      const updated = notes.map(n => n.id === activeId ? { ...n, isLocked: true } : n)
+      setNotes(updated)
+      // Do NOT add to session, so it immediately locks view.
+    }
+  }
+
+  const handleUnlock = () => {
+    setUnlockedSessionIds(prev => new Set(prev).add(activeId))
+  }
+
+  const handleSetPin = (pin) => {
+    localStorage.setItem('zap_user_pin', pin)
+    handleUnlock() // Unlock current note after setting PIN
+  }
+
   const activeNote = notes.find((n) => n.id === activeId) || null
+  const isGlobalUnlock = activeNote && activeNote.isLocked && unlockedSessionIds.has(activeNote.id)
+  const showLockScreen = activeNote && activeNote.isLocked && !isGlobalUnlock
 
   const allTags = useMemo(() => {
     const set = new Set()
@@ -571,22 +686,43 @@ export default function App() {
                   ))}
                 </div>
               )}
+              <button
+                className={`ml-auto w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer border-none
+                  ${activeNote.isLocked 
+                    ? 'bg-amber-100 text-amber-600 hover:bg-amber-200' 
+                    : 'bg-transparent text-gray-400 hover:bg-black/[0.05] hover:text-gray-600'}`}
+                onClick={handleToggleLock}
+                title={activeNote.isLocked ? 'Unlock Note (Remove Protection)' : 'Lock Note'}
+              >
+                {activeNote.isLocked ? '🔒' : '🔓'}
+              </button>
             </div>
-          <input
-            className="w-full px-6 pt-5 pb-2 text-[26px] font-bold border-none outline-none 
-                       placeholder:text-gray-300 tracking-tight bg-transparent font-sans"
-            type="text"
-            placeholder="Title"
-            value={activeNote.title}
-            onChange={handleTitleChange}
-          />
-          <ContentEditable
-            key={activeNote.id}
-            initialHtml={activeNote.content}
-            onChange={handleContentChange}
-            notes={notes}
-            onNavigateToNote={handleSelectNote}
-          />
+          
+          {showLockScreen ? (
+            <LockScreen 
+              isLocked={true} 
+              onUnlock={handleUnlock} 
+              onSetPin={handleSetPin} 
+            />
+          ) : (
+            <>
+              <input
+                className="w-full px-6 pt-5 pb-2 text-[26px] font-bold border-none outline-none 
+                          placeholder:text-gray-300 tracking-tight bg-transparent font-sans"
+                type="text"
+                placeholder="Title"
+                value={activeNote.title}
+                onChange={handleTitleChange}
+              />
+              <ContentEditable
+                key={activeNote.id}
+                initialHtml={activeNote.content}
+                onChange={handleContentChange}
+                notes={notes}
+                onNavigateToNote={handleSelectNote}
+              />
+            </>
+          )}
 
           {/* ── Backlinks / "Linked Here" section ── */}
           {backlinks.length > 0 && (

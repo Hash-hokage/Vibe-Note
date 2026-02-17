@@ -181,11 +181,6 @@ export default function Sidebar({
         <div className="flex items-center justify-between">
           <div className="text-[13px] text-gray-400 font-medium flex items-center gap-2">
             <span>{greeting}{userName ? ', ' : ''}</span>
-            {streak > 0 && (
-              <span className="flex items-center gap-0.5 text-orange-500 font-bold bg-orange-50 px-1.5 py-0.5 rounded-full" title={`${streak} day streak!`}>
-                <span className="animate-pulse">🔥</span> {streak}
-              </span>
-            )}
             {editingName ? (
               <input
                 ref={nameInputRef}
@@ -203,6 +198,11 @@ export default function Sidebar({
                 title="Click to edit your name"
               >
                 {userName || 'tap to set name'}
+              </span>
+            )}
+            {streak > 0 && (
+              <span className="flex items-center gap-0.5 text-orange-500 font-bold bg-orange-50 px-1.5 py-0.5 rounded-full" title={`${streak} day streak!`}>
+                <span className="animate-pulse">🔥</span> {streak}
               </span>
             )}
           </div>
@@ -266,14 +266,18 @@ export default function Sidebar({
             >
               <div className="flex items-center gap-1.5">
                 {isDaily && <span className="text-[12px]">📅</span>}
-                <div className="text-sm font-semibold text-gray-800 truncate">{note.title || 'Untitled'}</div>
+                <div className="text-sm font-semibold text-gray-800 truncate">
+                   {note.isLocked ? '🔒 ' : ''}{note.title || 'Untitled'}
+                </div>
                 {isTodayDaily && (
                   <span className="text-[9px] font-bold text-amber-600 bg-amber-100 px-1.5 py-0.5 rounded-full uppercase tracking-wide ml-auto flex-shrink-0">
                     Today
                   </span>
                 )}
               </div>
-              <div className="text-xs text-gray-400 truncate leading-snug mt-0.5">{stripHtml(note.content) || 'No content'}</div>
+              <div className="text-xs text-gray-400 truncate leading-snug mt-0.5">
+                {note.isLocked ? '••••••••' : (stripHtml(note.content) || 'No content')}
+              </div>
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-[11px] text-gray-400">{formatDate(note.updatedAt)}</span>
                 {(note.tags || []).length > 0 && (
