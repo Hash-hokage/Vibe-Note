@@ -124,7 +124,8 @@ export default function Sidebar({
   isMobile,
   isDarkMode,
   toggleDarkMode,
-  streak
+  streak,
+  onRunTour
 }) {
   const fileInputRef = useRef(null)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -153,7 +154,7 @@ export default function Sidebar({
   }
 
   return (
-    <aside className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-apple-sidebar border-black/[0.06]'} border-r flex flex-col h-[100dvh] select-none`}>
+    <div id="sidebar-panel" className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-apple-sidebar border-black/[0.06]'} border-r flex flex-col h-[100dvh] select-none`}>
 
       {/* My Tasks button */}
       <button
@@ -163,6 +164,7 @@ export default function Sidebar({
             : 'bg-black/[0.03] text-gray-500 border-transparent hover:bg-black/[0.06] hover:text-gray-700'
           }`}
         onClick={() => setView(view === 'tasks' ? 'notes' : 'tasks')}
+        id="global-tasks-btn"
       >
         <span className="text-base">☑️</span>
         <span>My Tasks</span>
@@ -210,6 +212,7 @@ export default function Sidebar({
                        border-none cursor-pointer shadow-sm"
             onClick={onNewNote}
             title="New note"
+            id="create-note-btn"
           >
             +
           </button>
@@ -298,7 +301,7 @@ export default function Sidebar({
 
       {/* Tags section */}
       {allTags.length > 0 && (
-        <div className="px-3 py-2 pb-24 border-t border-black/[0.06] flex-none">
+        <div id="tags-section" className="px-3 py-2 pb-24 border-t border-black/[0.06] flex-none">
           <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-1.5 py-1 flex items-center justify-between">
             Tags
             {activeTag && (
@@ -382,6 +385,7 @@ export default function Sidebar({
               }`}
             onClick={() => { setShowSettings(s => !s); setShowCalendar(false) }}
             title="Settings"
+            id="settings-btn"
           >
             ⚙️
           </button>
@@ -452,8 +456,17 @@ export default function Sidebar({
               : <span>Enable Notifications</span>
             }
           </button>
+          <button
+             className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium
+                        ${isDarkMode ? 'text-gray-200 bg-white/[0.04] hover:bg-white/[0.08]' : 'text-gray-700 bg-black/[0.03] hover:bg-black/[0.06]'}
+                        transition-colors duration-150 cursor-pointer border-none font-sans mt-1.5`}
+             onClick={() => { setShowSettings(false); onRunTour() }}
+          >
+            <span className="text-base">❓</span>
+            Re-run Tour
+          </button>
         </div>
       )}
-    </aside>
+    </div>
   )
 }

@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Sidebar from './components/Sidebar'
 import ContentEditable from './components/Editor'
 import TagDashboard from './components/TagDashboard'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 
 /* ─── helpers ─── */
 const generateId = () => Math.random().toString(36).substring(2, 10) + Date.now().toString(36)
@@ -313,6 +315,29 @@ export default function App() {
     return () => window.removeEventListener('keydown', handler)
   }, [])
 
+  /* ─── Tour Logic ─── */
+  const runTour = useCallback(() => {
+    const driverObj = driver({
+      showProgress: true,
+      steps: [
+        { element: '#sidebar-panel', popover: { title: 'Your Brain', description: 'All your notes and daily logs live here.' } },
+        { element: '#create-note-btn', popover: { title: 'Capture Ideas', description: 'Click here to start a fresh page.' } },
+        { element: '#global-tasks-btn', popover: { title: 'Master List', description: 'See every unchecked task from every note in one place.' } },
+        { element: '#main-editor', popover: { title: 'Just Type', description: 'Type "/" for commands, "[]" for tasks, or "@" for dates.' } },
+        { element: '#tags-section', popover: { title: 'Connect Dots', description: 'Click a tag to see a feed of all related ideas.' } }
+      ]
+    })
+    driverObj.drive()
+  }, [])
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('zap_has_seen_tour')
+    if (!hasSeenTour) {
+      setTimeout(() => runTour(), 1000)
+      localStorage.setItem('zap_has_seen_tour', 'true')
+    }
+  }, [runTour])
+
   const activeNote = notes.find((n) => n.id === activeId) || null
 
   const allTags = useMemo(() => {
@@ -501,6 +526,7 @@ export default function App() {
           isDarkMode={isDarkMode}
           toggleDarkMode={toggleDarkMode}
           streak={streak}
+          onRunTour={runTour}
         />
       )}
 
@@ -522,7 +548,7 @@ export default function App() {
             onClose={() => setActiveTag(null)}
           />
         ) : activeNote ? (
-          <main className={`flex-1 flex flex-col h-full overflow-hidden w-full ${isDarkMode ? 'bg-zinc-950' : 'bg-white'}`}>
+          <main id="main-editor" className={`flex-1 flex flex-col h-full overflow-hidden w-full ${isDarkMode ? 'bg-zinc-950' : 'bg-white'}`}>
             {/* Toolbar */}
             <div className={`flex items-center gap-4 px-4 md:px-6 py-3 border-b ${isDarkMode ? 'border-zinc-800' : 'border-black/[0.06]'}`}>
               {isMobile && (
