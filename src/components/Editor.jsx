@@ -56,6 +56,51 @@ const formatTime = (d) => {
   return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
 }
 
+/* ─── Syntax Highlighter ─── */
+const highlightSyntax = (block) => {
+  if (!block || block.nodeType !== Node.ELEMENT_NODE) return
+  
+  // Find text nodes containing @word
+  const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, null, false)
+  const nodes = []
+  while (walker.nextNode()) nodes.push(walker.currentNode)
+
+  let modified = false
+  nodes.forEach(node => {
+    // Skip if already inside a highlight span
+    if (node.parentNode.classList.contains('syntax-highlight')) return
+    
+    // Regex for @word (simple alphanumeric)
+    const text = node.textContent
+    const regex = /(@\w+)/g
+    if (regex.test(text)) {
+      const fragment = document.createDocumentFragment()
+      let lastIdx = 0
+      let match
+      while ((match = regex.exec(text)) !== null) {
+        // Text before
+        if (match.index > lastIdx) {
+          fragment.appendChild(document.createTextNode(text.slice(lastIdx, match.index)))
+        }
+        // Highlighted span
+        const span = document.createElement('span')
+        span.className = 'syntax-highlight bg-yellow-100 text-yellow-800 rounded px-1 font-medium mx-0.5'
+        span.textContent = match[0]
+        fragment.appendChild(span)
+        lastIdx = regex.lastIndex
+      }
+      // Text after
+      if (lastIdx < text.length) {
+        fragment.appendChild(document.createTextNode(text.slice(lastIdx)))
+      }
+      
+      node.parentNode.replaceChild(fragment, node)
+      modified = true
+    }
+  })
+  return modified
+}
+
 /* ── Active notification timers ── */
 const notificationTimers = new Set()
 
@@ -388,6 +433,24 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
       if (e.key === 'Escape') { e.preventDefault(); setSlashMenu(null); return }
       if (e.key.length === 1 && e.key !== '/') { setSlashMenu(null) }
       return
+    }
+
+    if (e.key === 'Enter' && !wikiMenu && !slashMenu) {
+      setTimeout(() => {
+        const sel = window.getSelection()
+        if (!sel.rangeCount) return
+        const node = sel.anchorNode
+        // Highlight current block (if any) and previous block
+        const block = node.nodeType === Node.ELEMENT_NODE ? node : node.parentNode
+        const currentBlock = block.closest('div, p, li')
+        if (currentBlock) {
+           highlightSyntax(currentBlock)
+           const prev = currentBlock.previousElementSibling
+           if (prev) highlightSyntax(prev)
+           // Save changes
+           emitChange() 
+        }
+      }, 0)
     }
 
     if (e.key === ' ') {

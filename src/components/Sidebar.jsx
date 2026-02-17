@@ -124,6 +124,7 @@ export default function Sidebar({
   isMobile,
   isDarkMode,
   toggleDarkMode,
+  streak
 }) {
   const fileInputRef = useRef(null)
   const [showCalendar, setShowCalendar] = useState(false)
@@ -176,8 +177,13 @@ export default function Sidebar({
       {/* Header with greeting */}
       <div className="px-5 pt-5 pb-1 flex-none">
         <div className="flex items-center justify-between">
-          <div className="text-[13px] text-gray-400 font-medium">
-            {greeting}{userName ? ', ' : ''}
+          <div className="text-[13px] text-gray-400 font-medium flex items-center gap-2">
+            <span>{greeting}{userName ? ', ' : ''}</span>
+            {streak > 0 && (
+              <span className="flex items-center gap-0.5 text-orange-500 font-bold bg-orange-50 px-1.5 py-0.5 rounded-full" title={`${streak} day streak!`}>
+                <span className="animate-pulse">🔥</span> {streak}
+              </span>
+            )}
             {editingName ? (
               <input
                 ref={nameInputRef}

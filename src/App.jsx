@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
 import Sidebar from './components/Sidebar'
 import ContentEditable from './components/Editor'
+import TagDashboard from './components/TagDashboard'
 
 /* ─── helpers ─── */
 const generateId = () => Math.random().toString(36).substring(2, 10) + Date.now().toString(36)
@@ -165,6 +166,98 @@ export default function App() {
   const [showPalette, setShowPalette] = useState(false)
   const [mobileView, setMobileView] = useState('LIST') // 'LIST' or 'EDITOR'
 
+  /* ─── Task Rollover & Streak Logic ─── */
+  const [streak, setStreak] = useState(0)
+
+  useEffect(() => {
+    // 1. Calculate Streak
+    const dailyNotes = notes.filter(n => n.isDaily).sort((a, b) => new Date(b.title) - new Date(a.title))
+    if (dailyNotes.length > 0) {
+      let currentStreak = 0
+      const now = new Date()
+      now.setHours(0,0,0,0)
+      
+      const lastNoteDate = new Date(dailyNotes[0].title)
+      lastNoteDate.setHours(0,0,0,0)
+      const diffHours = (now - lastNoteDate) / (1000 * 60 * 60)
+      
+      // Grace period: < 48h (so if executed today, last note could be yesterday or today)
+      // Actually if last note is today, diff is 0. If yesterday, diff is 24.
+      // If day before yesterday, diff is 48. So < 48 keeps chain alive.
+      if (diffHours < 48) {
+        currentStreak = 1
+        let prevDate = lastNoteDate
+        for (let i = 1; i < dailyNotes.length; i++) {
+          const d = new Date(dailyNotes[i].title)
+          d.setHours(0,0,0,0)
+          const gap = (prevDate - d) / (1000 * 60 * 60 * 24)
+          if (gap === 1) {
+            currentStreak++
+            prevDate = d
+          } else {
+            break
+          }
+        }
+      }
+      setStreak(currentStreak)
+    }
+
+    // 2. Task Rollover
+    const todayTitle = formatDailyTitle(new Date())
+    const todayNote = notes.find(n => n.title === todayTitle && n.isDaily)
+    
+    // Find most recent daily note that is NOT today
+    const recentNote = dailyNotes.find(n => n.title !== todayTitle)
+
+    if (recentNote && todayNote) {
+      const tmp = document.createElement('div')
+      tmp.innerHTML = recentNote.content
+      const unfinished = []
+      let hasChanges = false
+
+      tmp.querySelectorAll('.checkbox-item').forEach(item => {
+        const input = item.querySelector('input')
+        const span = item.querySelector('.checkbox-text')
+        // Check if unchecked, not disabled, and not already moved
+        if (input && !input.checked && !input.disabled && !item.classList.contains('checked')) {
+          const text = span.textContent.trim()
+          if (text && text !== 'One big thing to achieve today...' && !text.startsWith('[>]')) {
+             unfinished.push(item.outerHTML)
+             // Mark as moved
+             span.textContent = `[>] ${text}`
+             span.style.color = '#9ca3af'
+             input.disabled = true
+             hasChanges = true
+          }
+        }
+      })
+
+      if (hasChanges && unfinished.length > 0) {
+        const updatedRecent = { ...recentNote, content: tmp.innerHTML, updatedAt: Date.now() }
+        const rolloverHtml = `<h2>↩️ Rolled Over</h2>${unfinished.join('')}<div><br></div>`
+        const updatedToday = { ...todayNote, content: todayNote.content + rolloverHtml, updatedAt: Date.now() }
+
+        setNotes(prev => prev.map(n => 
+          n.id === updatedRecent.id ? updatedRecent : 
+          n.id === updatedToday.id ? updatedToday : n
+        ))
+        
+        if ('vibrate' in navigator) navigator.vibrate(50)
+      }
+    }
+  }, []) 
+
+  /* ─── Tag View Logic ─── */
+  useEffect(() => {
+    if (activeTag) {
+      setView('tags')
+      if (isMobile) setMobileView('EDITOR') // Show dashboard on mobile
+    } else if (view === 'tags') {
+      setView('notes')
+    }
+  }, [activeTag])
+
+  /* ─── Dark mode ─── */
   /* ─── Dark mode ─── */
   const [isDarkMode, setIsDarkMode] = useState(() => {
     const saved = localStorage.getItem('theme')
@@ -407,6 +500,7 @@ export default function App() {
           isMobile={isMobile}
           isDarkMode={isDarkMode}
           toggleDarkMode={toggleDarkMode}
+          streak={streak}
         />
       )}
 
@@ -416,6 +510,17 @@ export default function App() {
         {view === 'tasks' ? (
           <GlobalTasksView tasks={globalTasks} onNavigate={handleSelectNote}
             onBack={isMobile ? () => setMobileView('LIST') : null} isMobile={isMobile} />
+        ) : view === 'tags' && activeTag ? (
+          <TagDashboard 
+            notes={notes}
+            activeTag={activeTag}
+            isDarkMode={isDarkMode}
+            onNavigate={(noteId) => {
+              setActiveId(noteId)
+              setActiveTag(null) // Clear tag to return to editor
+            }}
+            onClose={() => setActiveTag(null)}
+          />
         ) : activeNote ? (
           <main className={`flex-1 flex flex-col h-full overflow-hidden w-full ${isDarkMode ? 'bg-zinc-950' : 'bg-white'}`}>
             {/* Toolbar */}
