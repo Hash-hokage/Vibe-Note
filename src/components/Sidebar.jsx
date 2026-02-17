@@ -122,12 +122,14 @@ export default function Sidebar({
   todayDailyNote,
   onOpenDailyNote,
   isMobile,
+  isDarkMode,
+  toggleDarkMode,
 }) {
   const fileInputRef = useRef(null)
   const [showCalendar, setShowCalendar] = useState(false)
 
   return (
-    <aside className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} bg-apple-sidebar border-r border-black/[0.06] flex flex-col h-full select-none`}>
+    <aside className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-apple-sidebar border-black/[0.06]'} border-r flex flex-col h-full select-none`}>
 
       {/* My Tasks button */}
       <button
@@ -165,9 +167,11 @@ export default function Sidebar({
       {/* Search */}
       <div className="px-3 pb-2.5">
         <input
-          className="w-full px-3 py-2 rounded-lg bg-black/[0.04] border-none outline-none text-[13px] 
-                     placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-apple-accent/50 
-                     transition-all duration-150 font-sans"
+          className={`w-full px-3 py-2 rounded-lg border-none outline-none text-[13px] 
+                     transition-all duration-150 font-sans
+                     ${isDarkMode 
+                       ? 'bg-zinc-800 text-gray-200 placeholder:text-zinc-500 focus:bg-zinc-700 focus:ring-2 focus:ring-apple-accent/50' 
+                       : 'bg-black/[0.04] placeholder:text-gray-400 focus:bg-white focus:ring-2 focus:ring-apple-accent/50'}`}
           type="text"
           placeholder="Search notes…"
           value={search}
@@ -193,8 +197,12 @@ export default function Sidebar({
                 ${note.id === activeId
                   ? 'bg-apple-accent/20 border border-apple-accent/30'
                   : isTodayDaily
-                    ? 'bg-gradient-to-r from-amber-50/80 to-orange-50/50 border border-amber-200/50 hover:border-amber-300/70'
-                    : 'hover:bg-black/[0.04] border border-transparent'
+                    ? isDarkMode
+                      ? 'bg-gradient-to-r from-amber-900/30 to-orange-900/20 border border-amber-700/40 hover:border-amber-600/60'
+                      : 'bg-gradient-to-r from-amber-50/80 to-orange-50/50 border border-amber-200/50 hover:border-amber-300/70'
+                    : isDarkMode
+                      ? 'hover:bg-white/[0.04] border border-transparent'
+                      : 'hover:bg-black/[0.04] border border-transparent'
                 }`}
               onClick={() => onSelectNote(note.id)}
             >
@@ -265,15 +273,17 @@ export default function Sidebar({
         </div>
       )}
 
-      {/* Notes count + Calendar + Settings */}
-      <div className="px-4 py-2.5 text-[11px] text-gray-400 border-t border-black/[0.06] flex items-center justify-between">
+      {/* Notes count + Calendar + Theme + Settings */}
+      <div className={`px-4 py-2.5 text-[11px] text-gray-400 border-t ${isDarkMode ? 'border-zinc-800' : 'border-black/[0.06]'} flex items-center justify-between`}>
         <span>{notes.length} {notes.length === 1 ? 'note' : 'notes'}</span>
         <div className="flex items-center gap-1">
           <button
             className={`w-7 h-7 rounded-lg flex items-center justify-center text-base cursor-pointer transition-all duration-150 border-none
               ${showCalendar
                 ? 'bg-amber-100 text-amber-700'
-                : 'bg-transparent text-gray-400 hover:bg-black/[0.05] hover:text-gray-600'
+                : isDarkMode
+                  ? 'bg-transparent text-gray-400 hover:bg-zinc-800 hover:text-gray-200'
+                  : 'bg-transparent text-gray-400 hover:bg-black/[0.05] hover:text-gray-600'
               }`}
             onClick={() => { setShowCalendar(s => !s); setShowSettings(false) }}
             title="Daily Notes Calendar"
@@ -281,10 +291,39 @@ export default function Sidebar({
             📅
           </button>
           <button
+            className={`w-7 h-7 rounded-lg flex items-center justify-center cursor-pointer transition-all duration-150 border-none
+              ${isDarkMode
+                ? 'bg-transparent text-amber-400 hover:bg-zinc-800 hover:text-amber-300'
+                : 'bg-transparent text-gray-400 hover:bg-black/[0.05] hover:text-gray-600'
+              }`}
+            onClick={toggleDarkMode}
+            title={isDarkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            {isDarkMode ? (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="5" />
+                <line x1="12" y1="1" x2="12" y2="3" />
+                <line x1="12" y1="21" x2="12" y2="23" />
+                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64" />
+                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+                <line x1="1" y1="12" x2="3" y2="12" />
+                <line x1="21" y1="12" x2="23" y2="12" />
+                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
+                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
+              </svg>
+            ) : (
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+              </svg>
+            )}
+          </button>
+          <button
             className={`w-7 h-7 rounded-lg flex items-center justify-center text-base cursor-pointer transition-all duration-150 border-none
               ${showSettings
-                ? 'bg-gray-200 text-gray-700'
-                : 'bg-transparent text-gray-400 hover:bg-black/[0.05] hover:text-gray-600'
+                ? isDarkMode ? 'bg-zinc-700 text-gray-200' : 'bg-gray-200 text-gray-700'
+                : isDarkMode
+                  ? 'bg-transparent text-gray-400 hover:bg-zinc-800 hover:text-gray-200'
+                  : 'bg-transparent text-gray-400 hover:bg-black/[0.05] hover:text-gray-600'
               }`}
             onClick={() => { setShowSettings(s => !s); setShowCalendar(false) }}
             title="Settings"
@@ -305,21 +344,21 @@ export default function Sidebar({
 
       {/* Settings panel */}
       {showSettings && (
-        <div className="px-3 py-3 border-t border-black/[0.06] bg-white/60 backdrop-blur">
+        <div className={`px-3 py-3 border-t ${isDarkMode ? 'border-zinc-800 bg-zinc-800/60 backdrop-blur' : 'border-black/[0.06] bg-white/60 backdrop-blur'}`}>
           <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wider px-1 mb-2">Settings</div>
           <button
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-700
-                       bg-black/[0.03] hover:bg-black/[0.06] transition-colors duration-150 cursor-pointer border-none
-                       font-sans mb-1.5"
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium
+                       ${isDarkMode ? 'text-gray-200 bg-white/[0.04] hover:bg-white/[0.08]' : 'text-gray-700 bg-black/[0.03] hover:bg-black/[0.06]'} 
+                       transition-colors duration-150 cursor-pointer border-none font-sans mb-1.5`}
             onClick={onExport}
           >
             <span className="text-base">📥</span>
             Export Data
           </button>
           <button
-            className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-700
-                       bg-black/[0.03] hover:bg-black/[0.06] transition-colors duration-150 cursor-pointer border-none
-                       font-sans"
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium
+                       ${isDarkMode ? 'text-gray-200 bg-white/[0.04] hover:bg-white/[0.08]' : 'text-gray-700 bg-black/[0.03] hover:bg-black/[0.06]'}
+                       transition-colors duration-150 cursor-pointer border-none font-sans`}
             onClick={() => fileInputRef.current?.click()}
           >
             <span className="text-base">📤</span>

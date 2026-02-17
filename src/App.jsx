@@ -155,6 +155,24 @@ export default function App() {
   const [showPalette, setShowPalette] = useState(false)
   const [mobileView, setMobileView] = useState('LIST') // 'LIST' or 'EDITOR'
 
+  /* ─── Dark mode ─── */
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    const saved = localStorage.getItem('theme')
+    if (saved) return saved === 'dark'
+    return window.matchMedia('(prefers-color-scheme: dark)').matches
+  })
+  useEffect(() => {
+    const root = document.documentElement
+    if (isDarkMode) {
+      root.classList.add('dark')
+      localStorage.setItem('theme', 'dark')
+    } else {
+      root.classList.remove('dark')
+      localStorage.setItem('theme', 'light')
+    }
+  }, [isDarkMode])
+  const toggleDarkMode = useCallback(() => setIsDarkMode(prev => !prev), [])
+
   /* ─── Responsive: detect mobile (<768px) ─── */
   const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
   useEffect(() => {
@@ -349,7 +367,7 @@ export default function App() {
   const showMain = !isMobile || mobileView === 'EDITOR'
 
   return (
-    <div className="flex h-screen bg-apple-bg font-sans overflow-hidden">
+    <div className={`flex h-screen font-sans overflow-hidden ${isDarkMode ? 'bg-zinc-950' : 'bg-apple-bg'}`}>
       {/* ===== Sidebar ===== */}
       {showSidebar && (
         <Sidebar
@@ -376,6 +394,8 @@ export default function App() {
           todayDailyNote={todayDailyNote}
           onOpenDailyNote={openDailyNote}
           isMobile={isMobile}
+          isDarkMode={isDarkMode}
+          toggleDarkMode={toggleDarkMode}
         />
       )}
 
@@ -386,9 +406,9 @@ export default function App() {
           <GlobalTasksView tasks={globalTasks} onNavigate={handleSelectNote}
             onBack={isMobile ? () => setMobileView('LIST') : null} isMobile={isMobile} />
         ) : activeNote ? (
-          <main className="flex-1 flex flex-col bg-white h-full overflow-hidden w-full">
+          <main className={`flex-1 flex flex-col h-full overflow-hidden w-full ${isDarkMode ? 'bg-zinc-950' : 'bg-white'}`}>
             {/* Toolbar */}
-            <div className="flex items-center gap-4 px-4 md:px-6 py-3 border-b border-black/[0.06]">
+            <div className={`flex items-center gap-4 px-4 md:px-6 py-3 border-b ${isDarkMode ? 'border-zinc-800' : 'border-black/[0.06]'}`}>
               {isMobile && (
                 <button
                   className="flex items-center gap-1 text-apple-blue text-sm font-medium bg-transparent border-none 
