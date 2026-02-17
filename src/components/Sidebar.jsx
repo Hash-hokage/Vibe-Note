@@ -180,7 +180,7 @@ export default function Sidebar({
       </div>
 
       {/* Notes list */}
-      <div className="flex-1 overflow-y-auto px-4">
+      <div className="flex-1 overflow-y-auto px-4 pb-32">
         {filteredNotes.length === 0 && (
           <div className="py-6 px-3.5 text-center text-gray-400 text-[13px]">
             {search || activeTag ? 'No matching notes' : 'No notes yet'}
