@@ -5,6 +5,10 @@ import confetti from 'canvas-confetti'
 const DATE_KEYWORDS = /\b(today|tomorrow)\b/i
 const DATE_FORMAT = /\b(\d{1,2}\/(\d{1,2}))\b/
 
+/* ─── Time resolution for notification parser ─── */
+const TIME_24H = /@(\d{1,2}):(\d{2})\b/
+const TIME_12H = /@(\d{1,2})(?::(\d{2}))?(am|pm)/i
+
 const resolveDate = (keyword) => {
   const now = new Date()
   const lower = keyword.toLowerCase()
@@ -28,6 +32,32 @@ const resolveDate = (keyword) => {
 const formatDueDate = (d) => {
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
+const resolveTime = (match, regex) => {
+  const m = match[0].match(regex)
+  if (!m) return null
+  const now = new Date()
+  const target = new Date()
+  if (regex === TIME_24H) {
+    target.setHours(parseInt(m[1], 10), parseInt(m[2], 10), 0, 0)
+  } else {
+    let h = parseInt(m[1], 10)
+    const min = m[2] ? parseInt(m[2], 10) : 0
+    const ampm = m[3].toLowerCase()
+    if (ampm === 'pm' && h < 12) h += 12
+    if (ampm === 'am' && h === 12) h = 0
+    target.setHours(h, min, 0, 0)
+  }
+  if (target <= now) return null // time already passed today
+  return target
+}
+
+const formatTime = (d) => {
+  return d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
+}
+
+/* ── Active notification timers ── */
+const notificationTimers = new Set()
 
 /* ─── Slash command definitions ─── */
 const SLASH_COMMANDS = [
@@ -452,6 +482,56 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
     return true
   }, [])
 
+  /* ─── Parse time keywords in checkbox text for notifications ─── */
+  const parseTimeInCheckbox = useCallback((textNode) => {
+    const text = textNode.textContent
+    const checkboxText = textNode.parentNode
+    if (!checkboxText || !checkboxText.classList?.contains('checkbox-text')) return false
+    const label = checkboxText.closest('.checkbox-item')
+    if (!label) return false
+    if (label.querySelector('.time-badge')) return false
+
+    let match = text.match(TIME_24H)
+    let regex = TIME_24H
+    if (!match) {
+      match = text.match(TIME_12H)
+      regex = TIME_12H
+    }
+    if (!match) return false
+
+    const resolved = resolveTime(match, regex)
+    if (!resolved) return false
+
+    // Strip the @time from text
+    const before = text.slice(0, match.index)
+    const after = text.slice(match.index + match[0].length)
+    const cleanText = (before + after).replace(/\s{2,}/g, ' ').trim() || '\u00A0'
+    textNode.textContent = cleanText
+
+    // Add time badge
+    const badge = document.createElement('span')
+    badge.className = 'time-badge inline-flex items-center ml-auto px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 text-[11px] font-medium border border-blue-200 select-none whitespace-nowrap flex-shrink-0'
+    badge.contentEditable = 'false'
+    badge.textContent = '\u23f0 ' + formatTime(resolved)
+    label.appendChild(badge)
+
+    // Schedule notification
+    const delay = resolved.getTime() - Date.now()
+    if (delay > 0 && Notification.permission === 'granted') {
+      const timerId = setTimeout(() => {
+        new Notification('Zap Reminder \u26a1', {
+          body: cleanText,
+          icon: '/icon.svg'
+        })
+        if ('vibrate' in navigator) navigator.vibrate([50, 30, 50])
+        notificationTimers.delete(timerId)
+      }, delay)
+      notificationTimers.add(timerId)
+    }
+
+    return true
+  }, [])
+
   const handleInput = useCallback(() => {
     emitChange()
     const sel = window.getSelection()
@@ -505,6 +585,14 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
           return
         }
       }
+      // Time parsing for notifications
+      if (TIME_24H.test(beforeSpace) || TIME_12H.test(beforeSpace)) {
+        const didParse = parseTimeInCheckbox(node)
+        if (didParse) {
+          if (ref.current) onChangeRef.current(ref.current.innerHTML)
+          return
+        }
+      }
     }
 
     // Slash menu
@@ -514,7 +602,7 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
     } else if (slashMenu) {
       setSlashMenu(null)
     }
-  }, [slashMenu, wikiMenu, emitChange, parseDateInCheckbox])
+  }, [slashMenu, wikiMenu, emitChange, parseDateInCheckbox, parseTimeInCheckbox])
 
   const handleClick = useCallback((e) => {
     const target = e.target

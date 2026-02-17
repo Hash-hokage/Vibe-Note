@@ -420,6 +420,32 @@ export default function Sidebar({
             className="hidden"
             onChange={onImport}
           />
+          <button
+            className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium
+                       ${isDarkMode ? 'text-gray-200 bg-white/[0.04] hover:bg-white/[0.08]' : 'text-gray-700 bg-black/[0.03] hover:bg-black/[0.06]'}
+                       transition-colors duration-150 cursor-pointer border-none font-sans mt-1.5`}
+            onClick={async () => {
+              if (!('Notification' in window)) {
+                alert('Notifications not supported in this browser')
+                return
+              }
+              const perm = await Notification.requestPermission()
+              if (perm === 'granted') {
+                new Notification('Zap Notifications Enabled ⚡', {
+                  body: 'You\'ll get reminded when tasks are due!',
+                  icon: '/icon.svg'
+                })
+              } else if (perm === 'denied') {
+                alert('Notifications blocked. Enable them in browser settings.')
+              }
+            }}
+          >
+            <span className="text-base">🔔</span>
+            {typeof Notification !== 'undefined' && Notification.permission === 'granted'
+              ? <span className="text-green-500">Notifications On</span>
+              : <span>Enable Notifications</span>
+            }
+          </button>
         </div>
       )}
     </aside>
