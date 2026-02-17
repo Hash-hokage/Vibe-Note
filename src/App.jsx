@@ -500,6 +500,20 @@ export default function App() {
           onClose={() => setShowPalette(false)}
         />
       )}
+
+      {/* ===== Mobile FAB (New Note) ===== */}
+      {isMobile && mobileView === 'LIST' && (
+        <button
+          className="fixed bottom-8 right-8 z-50 w-14 h-14 rounded-full bg-yellow-400 shadow-2xl
+                     flex items-center justify-center text-black text-3xl font-bold
+                     active:scale-90 transition-transform duration-150 border-none cursor-pointer
+                     hover:bg-yellow-300"
+          onClick={handleNewNote}
+          aria-label="New Note"
+        >
+          +
+        </button>
+      )}
     </div>
   )
 }
