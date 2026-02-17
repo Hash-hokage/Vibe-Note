@@ -70,9 +70,13 @@
 
   /* ── Editor empty placeholder (needs :empty::before pseudo) ── */
   .editor-content:empty::before {
-    content: 'Start writing…';
+    content: 'What are you building?';
     @apply text-gray-400 pointer-events-none;
   }
+  .editor-content[data-placeholder="1"]:empty::before { content: 'Brain dump time \ud83e\udde0'; }
+  .editor-content[data-placeholder="2"]:empty::before { content: 'The next big idea starts here \ud83d\ude80'; }
+  .editor-content[data-placeholder="3"]:empty::before { content: 'Write something legendary \u270f\ufe0f'; }
+  .editor-content[data-placeholder="4"]:empty::before { content: 'Pour your thoughts here \u2615'; }
 
   .dark .editor-content:empty::before {
     color: #71717a;

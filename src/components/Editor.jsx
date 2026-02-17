@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react'
+import confetti from 'canvas-confetti'
 
 /* ─── Date resolution for task parser ─── */
 const DATE_KEYWORDS = /\b(today|tomorrow)\b/i
@@ -542,6 +543,11 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
         textSpan.style.textDecoration = 'line-through'
         textSpan.style.color = '#9ca3af'
 
+        // 🎉 Confetti burst
+        confetti({ particleCount: 30, spread: 50, origin: { y: 0.7 } })
+        // 📳 Haptic tick
+        if ('vibrate' in navigator) navigator.vibrate(10)
+
         let hr = editor.querySelector('hr.completed-divider')
         let heading = editor.querySelector('h3.completed-heading')
 
@@ -588,11 +594,14 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
     }
   }, [])
 
+  const placeholderId = useMemo(() => Math.floor(Math.random() * 5), [])
+
   return (
     <>
       <div
         ref={ref}
         className="editor-content px-5 py-6 w-full h-full outline-none border-none ring-0 focus:ring-0 resize-none"
+        data-placeholder={placeholderId}
         contentEditable
         suppressContentEditableWarning
         onInput={handleInput}

@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo } from 'react'
+import React, { useRef, useState, useMemo, useEffect } from 'react'
 
 /* ─── Mini calendar grid ─── */
 function CalendarPopup({ notes, onOpenDate, onClose }) {
@@ -127,6 +127,29 @@ export default function Sidebar({
 }) {
   const fileInputRef = useRef(null)
   const [showCalendar, setShowCalendar] = useState(false)
+  const [userName, setUserName] = useState(() => localStorage.getItem('zap-user-name') || '')
+  const [editingName, setEditingName] = useState(false)
+  const nameInputRef = useRef(null)
+
+  // Time-based greeting
+  const greeting = useMemo(() => {
+    const h = new Date().getHours()
+    if (h >= 5 && h < 12) return 'Good morning'
+    if (h >= 12 && h < 18) return 'Good afternoon'
+    if (h >= 18 && h < 24) return 'Good evening'
+    return 'Up late? ⚡️'
+  }, [])
+
+  useEffect(() => {
+    if (editingName && nameInputRef.current) nameInputRef.current.focus()
+  }, [editingName])
+
+  const saveName = (val) => {
+    const trimmed = val.trim()
+    setUserName(trimmed)
+    localStorage.setItem('zap-user-name', trimmed)
+    setEditingName(false)
+  }
 
   return (
     <aside className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-apple-sidebar border-black/[0.06]'} border-r flex flex-col h-[100dvh] select-none`}>
@@ -150,18 +173,44 @@ export default function Sidebar({
         )}
       </button>
 
-      {/* Header */}
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between">
-        <h1 className="text-lg font-bold tracking-tight text-gray-800">Notes</h1>
-        <button
-          className="w-8 h-8 rounded-lg bg-apple-accent text-white font-bold text-lg flex items-center justify-center 
-                     hover:bg-amber-400 hover:scale-105 transition-all duration-150 active:scale-95
-                     border-none cursor-pointer shadow-sm"
-          onClick={onNewNote}
-          title="New note"
-        >
-          +
-        </button>
+      {/* Header with greeting */}
+      <div className="px-5 pt-5 pb-1 flex-none">
+        <div className="flex items-center justify-between">
+          <div className="text-[13px] text-gray-400 font-medium">
+            {greeting}{userName ? ', ' : ''}
+            {editingName ? (
+              <input
+                ref={nameInputRef}
+                className={`inline-block w-24 border-none outline-none bg-transparent text-[13px] font-semibold
+                           ${isDarkMode ? 'text-gray-200' : 'text-gray-700'} font-sans`}
+                defaultValue={userName}
+                placeholder="Your name"
+                onBlur={(e) => saveName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') saveName(e.target.value) }}
+              />
+            ) : (
+              <span
+                className={`cursor-pointer font-semibold hover:underline ${isDarkMode ? 'text-gray-200' : 'text-gray-700'}`}
+                onClick={() => setEditingName(true)}
+                title="Click to edit your name"
+              >
+                {userName || 'tap to set name'}
+              </span>
+            )}
+          </div>
+          <button
+            className="w-8 h-8 rounded-lg bg-apple-accent text-white font-bold text-lg flex items-center justify-center 
+                       hover:bg-amber-400 hover:scale-105 transition-all duration-150 active:scale-95
+                       border-none cursor-pointer shadow-sm"
+            onClick={onNewNote}
+            title="New note"
+          >
+            +
+          </button>
+        </div>
+      </div>
+      <div className="px-5 pb-3">
+        <h1 className={`text-lg font-bold tracking-tight ${isDarkMode ? 'text-gray-100' : 'text-gray-800'}`}>Notes</h1>
       </div>
 
       {/* Search */}

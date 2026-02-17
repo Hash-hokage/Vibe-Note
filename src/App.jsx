@@ -296,6 +296,7 @@ export default function App() {
 
   const handleDeleteNote = (e, id) => {
     e.stopPropagation()
+    if ('vibrate' in navigator) navigator.vibrate([10, 30, 10])
     setNotes((prev) => prev.filter((n) => n.id !== id))
     if (activeId === id) {
       setActiveId(notes.find((n) => n.id !== id)?.id ?? null)
