@@ -83,14 +83,23 @@
   }
 
   /* ── Editor dark mode text ── */
+  /* ── Editor dark mode text ── */
   .dark .editor-content {
     color: #f4f4f5;
   }
 
+  /* Force opaque color for unchecked */
+  .editor-content .checkbox-text {
+    color: #1d1d1f; 
+  }
   .dark .editor-content .checkbox-text {
     color: #e4e4e7;
   }
 
+  /* Checked state */
+  .editor-content .checkbox-item.checked .checkbox-text {
+    @apply text-gray-500 line-through;
+  }
   .dark .editor-content .checkbox-item.checked .checkbox-text {
     color: #52525b;
   }

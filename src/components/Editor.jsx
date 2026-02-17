@@ -436,6 +436,87 @@ function ContentEditable({ initialHtml, onChange, notes, onNavigateToNote }) {
     }
 
     if (e.key === 'Enter' && !wikiMenu && !slashMenu) {
+      const sel = window.getSelection()
+      if (!sel.rangeCount) return
+
+      // ─── Smart Enter (Checkbox Logic) ───
+      const range = sel.getRangeAt(0)
+      const node = range.startContainer
+      const element = node.nodeType === Node.ELEMENT_NODE ? node : node.parentNode
+      
+      // 1. Check active styled checkbox
+      const checkboxItem = element.closest('.checkbox-item')
+      if (checkboxItem) {
+        e.preventDefault()
+        const textSpan = checkboxItem.querySelector('.checkbox-text')
+        const isEmpty = !textSpan || !textSpan.textContent.trim()
+        
+        if (isEmpty) {
+          // Break out of list
+          const div = document.createElement('div')
+          div.appendChild(document.createElement('br'))
+          checkboxItem.parentNode.replaceChild(div, checkboxItem)
+          // Focus
+          const newRange = document.createRange()
+          newRange.setStart(div, 0)
+          newRange.collapse(true)
+          sel.removeAllRanges()
+          sel.addRange(newRange)
+        } else {
+          // Continue list
+          const newWrapper = document.createElement('label')
+          newWrapper.className = 'checkbox-item flex items-center gap-2 py-1 cursor-pointer'
+          newWrapper.contentEditable = 'false'
+          newWrapper.innerHTML = `<input type="checkbox" class="checkbox-input"><span class="checkbox-text flex-1 outline-none min-w-0" contenteditable="true"></span>`
+          
+          if (checkboxItem.nextSibling) {
+            checkboxItem.parentNode.insertBefore(newWrapper, checkboxItem.nextSibling)
+          } else {
+            checkboxItem.parentNode.appendChild(newWrapper)
+          }
+          // Focus
+          const newSpan = newWrapper.querySelector('.checkbox-text')
+          newSpan.focus()
+        }
+        if (ref.current) onChangeRef.current(ref.current.innerHTML)
+        return
+      }
+
+      // 2. Check plain text [] list
+      const block = element.closest('div, p, li')
+      if (block) {
+        const text = block.textContent
+        const match = text.match(/^(\s*\[\]\s?)(.*)/)
+        if (match) {
+          const content = match[2]
+          if (!content.trim()) {
+             // Convert to empty line (break out)
+             e.preventDefault()
+             block.textContent = ''
+             block.appendChild(document.createElement('br'))
+          } else {
+             // Continue list (let default Enter split the line, then we prepend [] to new line? 
+             // OR manually insert new line. Manual is safer for preventing weird splits.)
+             e.preventDefault()
+             const div = document.createElement('div')
+             div.textContent = '[] '
+             if (block.nextSibling) {
+               block.parentNode.insertBefore(div, block.nextSibling)
+             } else {
+               block.parentNode.appendChild(div)
+             }
+             // Focus
+             const newRange = document.createRange()
+             newRange.setStart(div.firstChild, 3) 
+             newRange.collapse(true)
+             sel.removeAllRanges()
+             sel.addRange(newRange)
+          }
+          if (ref.current) onChangeRef.current(ref.current.innerHTML)
+          return
+        }
+      }
+
       setTimeout(() => {
         const sel = window.getSelection()
         if (!sel.rangeCount) return

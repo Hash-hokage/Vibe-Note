@@ -74,7 +74,7 @@ const createDailyNote = (date) => {
     `<h2>${title} — ${dayOfWeek}</h2>`,
     `<div><br></div>`,
     `<h2>Focus</h2>`,
-    `<div class="checkbox-item flex items-center gap-2 py-1"><input type="checkbox" class="checkbox-input"><span class="checkbox-text flex-1 outline-none min-w-0" contenteditable="true">One big thing to achieve today...</span></div>`,
+    `<div>[] One big thing to achieve today...</div>`,
     `<div><br></div>`,
     `<div><br></div>`,
     `<h2>Log</h2>`,
