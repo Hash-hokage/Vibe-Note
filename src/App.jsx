@@ -73,11 +73,11 @@ const createDailyNote = (date) => {
     `<h2>${title} — ${dayOfWeek}</h2>`,
     `<div><br></div>`,
     `<h2>Focus</h2>`,
-    `<label class="checkbox-item flex items-center gap-2 py-1 mb-6 cursor-pointer" contenteditable="false"><input type="checkbox" class="checkbox-input"><span class="checkbox-text flex-1 outline-none min-w-0" contenteditable="true">One big thing to achieve today...</span></label>`,
+    `<div class="checkbox-item flex items-center gap-2 py-1"><input type="checkbox" class="checkbox-input"><span class="checkbox-text flex-1 outline-none min-w-0" contenteditable="true">One big thing to achieve today...</span></div>`,
     `<div><br></div>`,
     `<div><br></div>`,
     `<h2>Log</h2>`,
-    `<p class="text-gray-400">What happened today?</p>`,
+    `<p>What happened today?</p>`,
     `<div><br></div>`,
   ].join('')
   return {

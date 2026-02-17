@@ -129,7 +129,7 @@ export default function Sidebar({
   const [showCalendar, setShowCalendar] = useState(false)
 
   return (
-    <aside className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-apple-sidebar border-black/[0.06]'} border-r flex flex-col h-full select-none`}>
+    <aside className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} ${isDarkMode ? 'bg-zinc-900 border-zinc-800' : 'bg-apple-sidebar border-black/[0.06]'} border-r flex flex-col h-[100dvh] select-none`}>
 
       {/* My Tasks button */}
       <button
@@ -180,7 +180,7 @@ export default function Sidebar({
       </div>
 
       {/* Notes list */}
-      <div className="flex-1 overflow-y-auto px-4 pb-32">
+      <div className="flex-1 overflow-y-auto px-4">
         {filteredNotes.length === 0 && (
           <div className="py-6 px-3.5 text-center text-gray-400 text-[13px]">
             {search || activeTag ? 'No matching notes' : 'No notes yet'}
@@ -243,7 +243,7 @@ export default function Sidebar({
 
       {/* Tags section */}
       {allTags.length > 0 && (
-        <div className="px-3 py-2 border-t border-black/[0.06]">
+        <div className="px-3 py-2 pb-24 border-t border-black/[0.06] flex-none">
           <div className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide px-1.5 py-1 flex items-center justify-between">
             Tags
             {activeTag && (
