@@ -121,12 +121,13 @@ export default function Sidebar({
   stripHtml,
   todayDailyNote,
   onOpenDailyNote,
+  isMobile,
 }) {
   const fileInputRef = useRef(null)
   const [showCalendar, setShowCalendar] = useState(false)
 
   return (
-    <aside className="w-[280px] min-w-[280px] bg-apple-sidebar border-r border-black/[0.06] flex flex-col h-full select-none">
+    <aside className={`${isMobile ? 'w-full' : 'w-[280px] min-w-[280px]'} bg-apple-sidebar border-r border-black/[0.06] flex flex-col h-full select-none`}>
 
       {/* My Tasks button */}
       <button

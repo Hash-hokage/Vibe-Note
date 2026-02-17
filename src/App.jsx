@@ -153,6 +153,16 @@ export default function App() {
   const [view, setView] = useState('notes')
   const [showSettings, setShowSettings] = useState(false)
   const [showPalette, setShowPalette] = useState(false)
+  const [mobileView, setMobileView] = useState('LIST') // 'LIST' or 'EDITOR'
+
+  /* ─── Responsive: detect mobile (<768px) ─── */
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768)
+  useEffect(() => {
+    const mq = window.matchMedia('(max-width: 767px)')
+    const handler = (e) => setIsMobile(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
 
   useEffect(() => {
     localStorage.setItem('notes-app-data', JSON.stringify(notes))
@@ -247,11 +257,13 @@ export default function App() {
     setActiveId(note.id)
     setSearch('')
     setView('notes')
+    setMobileView('EDITOR')
   }
 
   const handleSelectNote = (id) => {
     setActiveId(id)
     setView('notes')
+    setMobileView('EDITOR')
   }
 
   const handleDeleteNote = (e, id) => {
@@ -333,50 +345,71 @@ export default function App() {
     e.target.value = ''
   }
 
+  const showSidebar = !isMobile || mobileView === 'LIST'
+  const showMain = !isMobile || mobileView === 'EDITOR'
+
   return (
     <div className="flex h-screen bg-apple-bg font-sans overflow-hidden">
       {/* ===== Sidebar ===== */}
-      <Sidebar
-        notes={notes}
-        filteredNotes={filteredNotes}
-        activeId={activeId}
-        search={search}
-        setSearch={setSearch}
-        activeTag={activeTag}
-        setActiveTag={setActiveTag}
-        allTags={allTags}
-        view={view}
-        setView={setView}
-        globalTasks={globalTasks}
-        showSettings={showSettings}
-        setShowSettings={setShowSettings}
-        onNewNote={handleNewNote}
-        onSelectNote={handleSelectNote}
-        onDeleteNote={handleDeleteNote}
-        onExport={handleExport}
-        onImport={handleImport}
-        formatDate={formatDate}
-        stripHtml={stripHtml}
-        todayDailyNote={todayDailyNote}
-        onOpenDailyNote={openDailyNote}
-      />
+      {showSidebar && (
+        <Sidebar
+          notes={notes}
+          filteredNotes={filteredNotes}
+          activeId={activeId}
+          search={search}
+          setSearch={setSearch}
+          activeTag={activeTag}
+          setActiveTag={setActiveTag}
+          allTags={allTags}
+          view={view}
+          setView={setView}
+          globalTasks={globalTasks}
+          showSettings={showSettings}
+          setShowSettings={setShowSettings}
+          onNewNote={handleNewNote}
+          onSelectNote={handleSelectNote}
+          onDeleteNote={handleDeleteNote}
+          onExport={handleExport}
+          onImport={handleImport}
+          formatDate={formatDate}
+          stripHtml={stripHtml}
+          todayDailyNote={todayDailyNote}
+          onOpenDailyNote={openDailyNote}
+          isMobile={isMobile}
+        />
+      )}
 
       {/* ===== Main Area ===== */}
-      {view === 'tasks' ? (
-        <GlobalTasksView tasks={globalTasks} onNavigate={handleSelectNote} />
-      ) : activeNote ? (
-        <main className="flex-1 flex flex-col bg-white h-full overflow-hidden">
-          {/* Toolbar */}
-          <div className="flex items-center gap-4 px-6 py-3 border-b border-black/[0.06]">
-            <span className="text-xs text-gray-400">{formatDate(activeNote.updatedAt)}</span>
-            {(activeNote.tags || []).length > 0 && (
-              <div className="flex gap-1.5 flex-wrap">
-                {activeNote.tags.map((t) => (
-                  <span key={t} className="text-xs text-apple-blue bg-blue-50/50 px-2.5 py-0.5 rounded-full font-medium">#{t}</span>
-                ))}
-              </div>
-            )}
-          </div>
+      {showMain && (
+        <>
+        {view === 'tasks' ? (
+          <GlobalTasksView tasks={globalTasks} onNavigate={handleSelectNote}
+            onBack={isMobile ? () => setMobileView('LIST') : null} isMobile={isMobile} />
+        ) : activeNote ? (
+          <main className="flex-1 flex flex-col bg-white h-full overflow-hidden w-full">
+            {/* Toolbar */}
+            <div className="flex items-center gap-4 px-4 md:px-6 py-3 border-b border-black/[0.06]">
+              {isMobile && (
+                <button
+                  className="flex items-center gap-1 text-apple-blue text-sm font-medium bg-transparent border-none 
+                             cursor-pointer px-0 py-1 -ml-1 flex-shrink-0 font-sans"
+                  onClick={() => setMobileView('LIST')}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <polyline points="15 18 9 12 15 6" />
+                  </svg>
+                  Back
+                </button>
+              )}
+              <span className="text-xs text-gray-400">{formatDate(activeNote.updatedAt)}</span>
+              {(activeNote.tags || []).length > 0 && (
+                <div className="flex gap-1.5 flex-wrap">
+                  {activeNote.tags.map((t) => (
+                    <span key={t} className="text-xs text-apple-blue bg-blue-50/50 px-2.5 py-0.5 rounded-full font-medium">#{t}</span>
+                  ))}
+                </div>
+              )}
+            </div>
           <input
             className="w-full px-6 pt-5 pb-2 text-[26px] font-bold border-none outline-none 
                        placeholder:text-gray-300 tracking-tight bg-transparent font-sans"
@@ -415,13 +448,27 @@ export default function App() {
               </div>
             </div>
           )}
-        </main>
-      ) : (
-        <main className="flex-1 flex flex-col items-center justify-center bg-white text-gray-400">
-          <div className="text-5xl mb-3">📝</div>
-          <div className="text-lg font-medium text-gray-500">No note selected</div>
-          <div className="text-sm mt-1">Select a note or create a new one</div>
-        </main>
+          </main>
+        ) : (
+          <main className="flex-1 flex flex-col items-center justify-center bg-white text-gray-400 w-full">
+            {isMobile && (
+              <button
+                className="absolute top-4 left-4 flex items-center gap-1 text-apple-blue text-sm font-medium bg-transparent border-none 
+                           cursor-pointer px-0 py-1 font-sans"
+                onClick={() => setMobileView('LIST')}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="15 18 9 12 15 6" />
+                </svg>
+                Back
+              </button>
+            )}
+            <div className="text-5xl mb-3">📝</div>
+            <div className="text-lg font-medium text-gray-500">No note selected</div>
+            <div className="text-sm mt-1">Select a note or create a new one</div>
+          </main>
+        )}
+        </>
       )}
 
       {/* ===== Command Palette ===== */}
@@ -557,11 +604,24 @@ function CommandPalette({ notes, onSelect, onNewNote, onClose }) {
 }
 
 /* ─── GlobalTasksView ─── */
-function GlobalTasksView({ tasks, onNavigate }) {
+function GlobalTasksView({ tasks, onNavigate, onBack, isMobile }) {
   return (
-    <main className="flex-1 flex flex-col bg-white h-full overflow-hidden">
-      <div className="flex items-center justify-between px-8 pt-6 pb-4 border-b border-black/[0.06]">
-        <h2 className="text-[22px] font-bold tracking-tight">☑️ My Tasks</h2>
+    <main className="flex-1 flex flex-col bg-white h-full overflow-hidden w-full">
+      <div className="flex items-center justify-between px-4 md:px-8 pt-6 pb-4 border-b border-black/[0.06]">
+        <div className="flex items-center gap-2">
+          {isMobile && onBack && (
+            <button
+              className="flex items-center gap-1 text-apple-blue text-sm font-medium bg-transparent border-none 
+                         cursor-pointer px-0 py-1 -ml-1 flex-shrink-0 font-sans"
+              onClick={onBack}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+          )}
+          <h2 className="text-[22px] font-bold tracking-tight">☑️ My Tasks</h2>
+        </div>
         <span className="text-[13px] text-gray-400 font-medium">
           {tasks.length} {tasks.length === 1 ? 'task' : 'tasks'}
         </span>
